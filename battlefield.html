@@ -418,9 +418,6 @@
 			</div>
 		</div>
 
-		<script src="https://code.jquery.com/jquery-3.6.0.min.js"
-  		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-  		crossorigin="anonymous"></script>
   	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
   	<script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
   	<script src="https://unpkg.com/konva@8.1.3/konva.min.js"></script>
@@ -658,6 +655,12 @@
 	      return Math.floor(Math.random() * 10000000000000001);
 	    }
 
+	    function removeAllChildNodes(parent) {
+	    	while (parent.firstChild) {
+	    		parent.removeChild(parent.firstChild);
+	    	}
+	    }
+
 	    class StateHandler {
 	    	constructor(options) {
 	    	}
@@ -681,13 +684,9 @@
 	    		if (!state) return this.defaultState();
 
 	    		let battlefields = [];
-	    		state.battlefields.forEach(b => {
-	    			battlefields.push(new Battlefield(b));
-	    		});
+	    		state.battlefields.forEach(b => battlefields.push(new Battlefield(b)));
 
-	    		let battlefield = battlefields.filter(b => {
-	    			return b.id === state.currentBattlefield;
-	    		})[0];
+	    		let battlefield = battlefields.filter(b => b.id === state.currentBattlefield)[0];
 	    		if (!battlefield) battlefield = battlefields[0];
 	    		if (!battlefield) return defaultState();
 
@@ -953,9 +952,7 @@
         }
 
         getPcFromArray(id, arr) {
-          return arr.filter(obj => {
-            return obj.id === id;
-          })[0];
+          return arr.filter(obj => obj.id === id)[0];
         }
 
         removePcFromArray(id, arr) {
@@ -1003,8 +1000,8 @@
           options.colorButton = options.colorButton || 'mapColorButton';
           options.damageButton = options.damageButton || 'mapDamageButton';
 
-          let container = document.querySelector('#' + options.container);
-          container.innerHTML = '';
+          let container = document.getElementById(options.container);
+          removeAllChildNodes(container);
           this.WIDTH = 1000;
           this.HEIGHT = 1000;
           this.GRID_SIZE = 25;
@@ -1114,7 +1111,7 @@
 					let group = this.currentShape.getParent();
           let char = group.getAttr('character');
 
-          $('#colorList').val(char.color);
+          document.getElementById('colorList').value = char.color;
           if (!this.colorModal) {
 	        	this.colorModal = new bootstrap.Modal(document.getElementById('shapeColorModal'));
 	        }
@@ -1126,7 +1123,7 @@
 
         	if (!this.currentShape) return;
 
-        	let color = $('#colorList').val();
+        	let color = document.getElementById('colorList').value;
         	if (!color) return;
 
           this.currentShape.fill(color);
@@ -1136,9 +1133,7 @@
           char.color = color;
           // If an NPC, update the color for all of the NPC's shapes.
           if (group.getAttr('isNpc')) {
-          	let groups = this.layer.getChildren(node => {
-          		return node.getAttr('character') === char;
-          	});
+          	let groups = this.layer.getChildren(node => node.getAttr('character') === char);
 
           	groups.forEach(group => { 
           		let shape = group.getChildren(child => {
@@ -1165,7 +1160,7 @@
 
           if (!this.currentShape) return;
 
-          let damage = parseInt($('#shapeDamage').val());
+          let damage = parseInt(document.getElementById('shapeDamage').value);
           if (!damage) return;
 
           let group = this.currentShape.getParent();
@@ -1183,9 +1178,7 @@
         }
 
         showHideDeadStatus(group, c) {
-        	let text = group.getChildren(child => {
-    				return child.getClassName() === 'Text';
-      		})[0];
+        	let text = group.getChildren(child => child.getClassName() === 'Text')[0];
       		if (c.isDead()) {
       			text.show();
       		} else {
@@ -1424,9 +1417,7 @@
         }
 
         removeShapes(id) {
-        	let groups = this.layer.getChildren(child => {
-        		return child.getAttr('character').id === id;
-        	});
+        	let groups = this.layer.getChildren(child => child.getAttr('character').id === id);
         	groups.forEach(group => group.destroy());
         }
       }
@@ -1446,23 +1437,28 @@
   		let npcCloneTitleTemplate = null;
   		let npcCloneRowTemplate = null;
 
+  		let newBattlefieldModal = null;
+  		let newPcModal = null;
+  		let newNpcModal = null;
+  		let shapeDamageModal = null;
+
   		function onBattlefieldUpdated(e) {
   			saveState();
   			updateBattleContent();
   		}
 
   		function loadState() {
-  			$('#battlefieldList')
-  				.empty()
-  				.append(battfieldTitleTemplate({}));
+  			let battlefieldList = document.getElementById('battlefieldList');
+  			removeAllChildNodes(battlefieldList);
+  			battlefieldList.insertAdjacentHTML('beforeend', battfieldTitleTemplate({}));
 
-  			$('#pcList')
-  				.empty()
-  				.append(pcTitleTemplate({}));
+  			let pcList = document.getElementById('pcList');
+  			removeAllChildNodes(pcList);
+  			pcList.insertAdjacentHTML('beforeend', pcTitleTemplate({}));
 
-  			$('#npcList')
-  				.empty()
-  				.append(npcTitleTemplate({}));
+  			let npcList = document.getElementById('npcList');
+  			removeAllChildNodes(npcList);
+  			npcList.insertAdjacentHTML('beforeend', npcTitleTemplate({}));
 
   			if (battlefield) {
   				battlefield.removeEventListener('updated', onBattlefieldUpdated);
@@ -1483,11 +1479,23 @@
 
   			showBattlefieldName();
 
-  			battlefields.forEach(b => addBattlefieldRow(b));
+  			battlefields.forEach(b => addBattlefieldRow(battlefieldList, b));
+  			addElementEventHandlers(battlefieldList, 'input', 'change', updateBattlefieldInfo);
+  			addElementEventHandlers(battlefieldList, '.selectBattlefieldLink', 'click', selectBattlefield);
+  			addElementEventHandlers(battlefieldList, '.removeLink', 'click', removeBattlefield);
 
   			if (battlefield) {
-  				battlefield.pcs.forEach(pc => addRow('#pcList', pcRowTemplate, pc));
-  				battlefield.npcs.forEach(npc => addRow('#npcList', npcRowTemplate, npc));
+  				let pcList = document.getElementById('pcList');
+  				battlefield.pcs.forEach(pc => addPcRow(pcList, pcRowTemplate, pc));
+	  			addElementEventHandlers(pcList, 'input', 'change', updatePcInfo);
+	  			addElementEventHandlers(pcList, '.rollInitiativeLink', 'click', rollInitiativeForPc);
+	  			addElementEventHandlers(pcList, '.removeLink', 'click', removePc);
+
+  				let npcList = document.getElementById('npcList');
+  				battlefield.npcs.forEach(npc => addNpcRow(npcList, npcRowTemplate, npc));
+	  			addElementEventHandlers(npcList, 'input', 'change', updateNpcInfo);
+	  			addElementEventHandlers(npcList, '.rollInitiativeLink', 'click', rollInitiativeForNpc);
+	  			addElementEventHandlers(npcList, '.removeLink', 'click', removeNpc);
 				} else {
 					selectBattlefieldsTab();
 				}
@@ -1495,15 +1503,25 @@
 				updateBattleContent();
   		}
 
+  		function addPcRow(parent, template, pc) {
+  			let row = template(pc);
+  			parent.insertAdjacentHTML('beforeend', row);
+  		}
+
+  		function addNpcRow(parent, template, npc) {
+  			let row = template(npc);
+  			parent.insertAdjacentHTML('beforeend', row);
+  		}
+
   		function showBattlefieldName() {
   			if (battlefield) {
-  				$('#selectedBattlefieldName').html(battlefield.name);
+  				document.getElementById('selectedBattlefieldName').innerHTML = battlefield.name;
   				return;
   			}
 
   			// If we got here there are no sets to show.
   			battlefield = null;
-  			$('#selectedBattlefieldName').empty();
+  			document.getElementById('selectedBattlefieldName').innerHTML = '';
   		}
 
   		function loadBattlefieldsList() {
@@ -1520,47 +1538,61 @@
   		}
 
   		function showBattlefield() {
-  			$('#pcList').empty();
-  			$('#npcList').empty();
+  			let pcList = document.getElementById('pcList');
+  			removeAllChildNodes(pcList);
+  			let npcList = document.getElementById('npcList');
+  			removeAllChildNodes(npcList);
 
-  			battlefield.pcs.forEach(pc => addRow('#pcList', pcRowTemplate, pc));
-  			battlefield.npcs.forEach(npc => addRow('#npcList', npcRowTemplate, npc));
+  			battlefield.pcs.forEach(pc => addRow(pcList, pcRowTemplate, pc));
+  			battlefield.npcs.forEach(npc => addRow(npcList, npcRowTemplate, npc));
 
   			updateBattleContent();
   		}
 
-  		function addBattlefieldRow(s) {
-  			let row = battlefieldRowTemplate(s);
-  			$('#battlefieldList').append(row);
+  		function addElementEventHandlers(parent, selector, eventName, handler) {
+  			let els = parent.querySelectorAll(selector);
+  			els.forEach(el => el.addEventListener(eventName, handler));
   		}
 
-  		function addRow(selector, template, r) {
+  		function addBattlefieldRow(parent, s) {
+  			let row = battlefieldRowTemplate(s);
+  			parent.insertAdjacentHTML('beforeend', row);
+  		}
+
+  		function addRow(parent, template, r) {
   			let row = template(r);
-  			$(selector).append(row);
+  			parent.insertAdjacentHTML('beforeend', row);
   		}
 
   		function updateBattleContent() {
-  			let list = $('#sortedList').empty();
+  			let list = document.getElementById('sortedList');
+  			removeAllChildNodes(list);
 
   			if (battlefield) {
-  				$('#sortedList').append(sortedTitleTemplate({}));
+  				list.insertAdjacentHTML('beforeend', sortedTitleTemplate({}));
 
   				let sorted = battlefield.getAllByInitiative();
-  				sorted.forEach(s => addRow('#sortedList', sortedRowTemplate, s));
+  				sorted.forEach(s => addSortedRow(list, sortedRowTemplate, s));
   			}
+  			addElementEventHandlers(list, 'input', 'change', updatePcDamage);
 
 				showNpcClones();
   		}
 
+  		function addSortedRow(parent, template, s) {
+  			let row = template(s);
+  			parent.insertAdjacentHTML('beforeend', row);
+  		}
+
   		function showNpcClones() {
-  			let list = $('#npcCloneList');
-  			list.empty();
+  			let list = document.getElementById('npcCloneList');
+  			removeAllChildNodes(list);
 
   			if (!battlefield || !battlefield.npcs) return;
 
   			let sorted = battlefield.getNpcsByInitiative();
 
-	  		list.append(npcCloneTitleTemplate({}));
+	  		list.insertAdjacentHTML('beforeend', npcCloneTitleTemplate({}));
 
 	  		sorted.forEach(npc => {
 	  			npc.updateAllClones();
@@ -1574,17 +1606,18 @@
 	  					hp: clone.hp,
 	  					index: i
 	  				});
-	  				list.append(row);
+	  				list.insertAdjacentHTML('beforeend', row);
 	  			});
 	  		});
+	  		addElementEventHandlers(list, 'input', 'change', updateNpcClones);
   		}
 
   		function addBattlefield(e) {
   			e.preventDefault();
 
-  			let name = $('#newBattlefieldName').val();
-  			
-  			$('#newBattlefieldModal').modal('hide');
+  			let name = document.getElementById('newBattlefieldName').value;
+
+  			newBattlefieldModal.hide();
 
   			if (!name) return;
 
@@ -1604,12 +1637,12 @@
   				return;
   			}
 
-  			let name = $('#newPcName').val();
-  			let maxHp = parseInt($('#newPcMaxHp').val()) || 8;
-  			let ac = parseInt($('#newPcAc').val()) || 10;
-  			let initBonus = parseInt($('#newPcInitBonus').val()) || 0;
+  			let name = document.getElementById('newPcName').value;
+  			let maxHp = parseInt(document.getElementById('newPcMaxHp').value) || 8;
+  			let ac = parseInt(document.getElementById('newPcAc').value) || 10;
+  			let initBonus = parseInt(document.getElementById('newPcInitBonus').value) || 0;
   			
-  			$('#newPcModal').modal('hide');
+  			newPcModal.hide();
 
   			if (!name) return;
 
@@ -1634,13 +1667,13 @@
   				return;
   			}
 
-  			let name = $('#newNpcName').val();
-  			let count = parseInt($('#newNpcCount').val()) || 1;
-  			let maxHp = parseInt($('#newNpcMaxHp').val()) || 10;
-  			let initBonus = parseInt($('#newNpcInitBonus').val()) || 0;
-  			let ac = parseInt($('#newNpcAc').val()) || 10;
+  			let name = document.getElementById('newNpcName').value;
+  			let count = parseInt(document.getElementById('newNpcCount').value) || 1;
+  			let maxHp = parseInt(document.getElementById('newNpcMaxHp').value) || 10;
+  			let initBonus = parseInt(document.getElementById('newNpcInitBonus').value) || 0;
+  			let ac = parseInt(document.getElementById('newNpcAc').value) || 10;
   			
-  			$('#newNpcModal').modal('hide');
+  			newNpcModal.hide();
 
   			if (!name) return;
 
@@ -1674,7 +1707,7 @@
   			e.preventDefault();
 
   			let rowData = getRowData(e);
-  			let name = rowData.row.find('.battlefieldName').val();
+  			let name = rowData.row.querySelector('.battlefieldName').value;
 
   			let obj = getRowObjectById(battlefields, rowData);
   			if (!obj) return;
@@ -1686,10 +1719,10 @@
   		}
 
   		function getRowData(e) {
-  			let row = $(e.target.closest('div.row'));
+  			let row = e.target.closest('div.row');
   			return {
   				row: row,
-  				id: parseInt(row.attr('data-id'))
+  				id: parseInt(row.dataset.id)
   			};
   		}
 
@@ -1699,9 +1732,7 @@
   			if (battlefield) battlefield.mapDeactivate();
 
   			let rowData = getRowData(e);
-  			battlefield = battlefields.filter(b => {
-  				return b.id === rowData.id;
-  			})[0];
+  			battlefield = battlefields.filter(b => b.id === rowData.id)[0];
   			saveState();
   			loadState();
 
@@ -1709,11 +1740,11 @@
   		}
 
   		function selectBattlefieldsTab() {
-  			selectTab('#battlefieldsTab');
+  			selectTab('battlefieldsTab');
   		}
 
   		function selectPcsTab() {
-  			selectTab('#pcsTab');
+  			selectTab('pcsTab');
   		}
 
   		function selectTab(selector) {
@@ -1765,12 +1796,16 @@
 
   			let rowData = getRowData(e);
   			let pc = battlefield.getPc(rowData.id);
-				pc.name = rowData.row.find('.pcName').val();
-				pc.maxHp = parseInt(rowData.row.find('.maxHp').val()) || 8;
-				pc.hp = parseInt(rowData.row.find('.hp').val()) || 8;
-				pc.ac = parseInt(rowData.row.find('.ac').val()) || 10;
-				pc.init = parseInt(rowData.row.find('.init').val()) || 0;
-				pc.initBonus = parseInt(rowData.row.find('.initBonus').val()) || 0;
+				pc.name = rowData.row.querySelector('.pcName').value;
+				pc.maxHp = parseInt(rowData.row.querySelector('.maxHp').value) || 8;
+				pc.hp = parseInt(rowData.row.querySelector('.hp').value) || 8;
+				if (pc.hp > pc.maxHp) {
+					pc.hp = pc.maxHp;
+					rowData.row.querySelector('.hp').value = pc.hp;
+				}
+				pc.ac = parseInt(rowData.row.querySelector('.ac').value )|| 10;
+				pc.init = parseInt(rowData.row.querySelector('.init').value) || 0;
+				pc.initBonus = parseInt(rowData.row.querySelector('.initBonus').value) || 0;
 				saveState();
 				updateBattleContent();
   		}
@@ -1780,13 +1815,13 @@
 
   			let rowData = getRowData(e);
   			let npc = battlefield.getNpc(rowData.id);
-				npc.name = rowData.row.find('.pcName').val();
-				npc.count = parseInt(rowData.row.find('.npcCount').val()) || 1;
-				npc.maxHp = parseInt(rowData.row.find('.maxHp').val()) || 10;
-				npc.hp = parseInt(rowData.row.find('.maxHp').val()) || 10;
-				npc.ac = parseInt(rowData.row.find('.ac').val()) || 10;
-				npc.init = parseInt(rowData.row.find('.init').val()) || 0;
-				npc.initBonus = parseInt(rowData.row.find('.initBonus').val()) || 0;
+				npc.name = rowData.row.querySelector('.pcName').value;
+				npc.count = parseInt(rowData.row.querySelector('.npcCount').value) || 1;
+				npc.maxHp = parseInt(rowData.row.querySelector('.maxHp').value) || 10;
+				npc.hp = parseInt(rowData.row.querySelector('.maxHp').value) || 10;
+				npc.ac = parseInt(rowData.row.querySelector('.ac').value) || 10;
+				npc.init = parseInt(rowData.row.querySelector('.init').value) || 0;
+				npc.initBonus = parseInt(rowData.row.querySelector('.initBonus').value) || 0;
 				saveState();
 				updateBattleContent();
   		}
@@ -1874,7 +1909,7 @@
 
   			let rowData = getRowData(e);
 
-  			let damage = parseInt(rowData.row.find('.hpDamage').val()) || 0;
+  			let damage = parseInt(rowData.row.querySelector('.hpDamage').value) || 0;
 
   			let pc = battlefield.getPc(rowData.id);
   			pc.takeDamage(damage);
@@ -1885,9 +1920,9 @@
   			e.preventDefault();
 
   			let rowData = getRowData(e);
-  			rowData.index = parseInt(rowData.row.attr('data-index'));
+  			rowData.index = parseInt(rowData.row.dataset.index);
 
-  			let damage = parseInt(rowData.row.find('.hpDamage').val()) || 0;
+  			let damage = parseInt(rowData.row.querySelector('.hpDamage').value) || 0;
 
   			let npc = battlefield.getNpc(rowData.id);
   			npc.cloneTakeDamage(rowData.index, damage);
@@ -1907,8 +1942,8 @@
   			return null;
   		}
 
-  		function getTemplate(selector) {
-  			let template = $(selector).html();
+  		function getTemplate(id) {
+  			let template = document.getElementById(id).innerHTML;
   			return Handlebars.compile(template);
   		}
 
@@ -1928,92 +1963,68 @@
   			battlefield.mapHideMenu();
   		}
 
-  		$(document).ready(function() {
-  			battfieldTitleTemplate = getTemplate('#battfieldTitleTemplate');
-  			battlefieldRowTemplate = getTemplate('#battlefieldRowTemplate');
-  			pcTitleTemplate = getTemplate('#pcTitleTemplate');
-  			pcRowTemplate = getTemplate('#pcRowTemplate');
-  			npcTitleTemplate = getTemplate('#npcTitleTemplate');
-  			npcRowTemplate = getTemplate('#npcRowTemplate');
-  			sortedTitleTemplate = getTemplate('#sortedTitleTemplate');
-  			sortedRowTemplate = getTemplate('#sortedRowTemplate');
-  			npcCloneTitleTemplate = getTemplate('#npcCloneTitleTemplate');
-  			npcCloneRowTemplate = getTemplate('#npcCloneRowTemplate');
+			battfieldTitleTemplate = getTemplate('battfieldTitleTemplate');
+			battlefieldRowTemplate = getTemplate('battlefieldRowTemplate');
+			pcTitleTemplate = getTemplate('pcTitleTemplate');
+			pcRowTemplate = getTemplate('pcRowTemplate');
+			npcTitleTemplate = getTemplate('npcTitleTemplate');
+			npcRowTemplate = getTemplate('npcRowTemplate');
+			sortedTitleTemplate = getTemplate('sortedTitleTemplate');
+			sortedRowTemplate = getTemplate('sortedRowTemplate');
+			npcCloneTitleTemplate = getTemplate('npcCloneTitleTemplate');
+			npcCloneRowTemplate = getTemplate('npcCloneRowTemplate');
 
-  			loadState();
+			loadState();
 
-  			$('#newBattlefieldModal')
-  				.on('show.bs.modal', function(e) {
-  					$('#newBattlefieldName').val('');
-  				})
-  				.on('shown.bs.modal', function(e) {
-  					$('#newBattlefieldName').focus();
-  				});
+			let newBattlefieldModalEl = document.getElementById('newBattlefieldModal');
+			newBattlefieldModal = new bootstrap.Modal(newBattlefieldModalEl);
+			newBattlefieldModalEl.addEventListener('show.bs.modal', e => document.getElementById('newBattlefieldName').innerHTML = '');
+			newBattlefieldModalEl.addEventListener('shown.bs.modal', e => document.getElementById('newBattlefieldName').focus());
 
-  			$('#newPcModal')
-  				.on('show.bs.modal', function(e) {
-  					$('#newPcName').val('');
-  					$('#newPcMaxHp').val('');
-  					$('#newPcAc').val('');
-  					$('#newPcInitBonus').val('0');
-  				})
-  				.on('shown.bs.modal', function(e) {
-  					$('#newPcName').focus();
-  				});
+			let newPcModalEl = document.getElementById('newPcModal');
+			newPcModal = new bootstrap.Modal(newPcModalEl);
+			newPcModalEl.addEventListener('show.bs.modal', e => {
+				document.getElementById('newPcName').value = '';
+				document.getElementById('newPcMaxHp').value = '';
+				document.getElementById('newPcAc').value = '';
+				document.getElementById('newPcInitBonus').value = '';
+			});
+			newPcModalEl.addEventListener('shown.bs.modal', e => document.getElementById('newPcName').focus());
 
-  			$('#newNpcModal')
-  				.on('show.bs.modal', function(e) {
-  					$('#newNpcName').val('');
-  					$('#newNpcCount').val('1');
-  					$('#newNpcMaxHp').val('');
-  					$('#newNpcAc').val('');
-  					$('#newNpcInitBonus').val('0');
-  				})
-  				.on('shown.bs.modal', function(e) {
-  					$('#newNpcName').focus();
-  				});
+			let newNpcModalEl = document.getElementById('newNpcModal');
+			newNpcModal = new bootstrap.Modal(newNpcModalEl);
+			newNpcModalEl.addEventListener('show.bs.modal', e => {
+				document.getElementById('newNpcName').value = '';
+				document.getElementById('newNpcCount').value = '';
+				document.getElementById('newNpcMaxHp').value = '';
+				document.getElementById('newNpcAc').value = '';
+				document.getElementById('newNpcInitBonus').value = '';
+			});
+			newNpcModalEl.addEventListener('shown.bs.modal', e => document.getElementById('newNpcName').focus());
 
-  			$('#shapeDamageModal')
-  				.on('show.bs.modal', function(e) {
-  					$('#shapeDamage').val('');
-  				})
-  				.on('shown.bs.modal', function(e) {
-  					$('#shapeDamage').focus();
-  				});
+			let shapeDamageModalEl = document.getElementById('shapeDamageModal');
+			shapeDamageModal = new bootstrap.Modal(shapeDamageModalEl);
+			shapeDamageModalEl.addEventListener('show.bs.modal', e => document.getElementById('shapeDamage').value = '');
+			shapeDamageModalEl.addEventListener('shown.bs.modal', e => document.getElementById('shapeDamage').focus());
 
-  			$('#newBattlefieldModalAddButton').click(addBattlefield);
-  			$('#newPcModalAddButton').click(addPc);
-  			$('#newNpcModalAddButton').click(addNpc);
-  			$('#shapeColorModalSetButton').click(mapSetShapeColor);
-  			$('#shapeDamageModalSetButton').click(mapTakeDamage);
+			document.getElementById('newBattlefieldModalAddButton').addEventListener('click', addBattlefield);
+			document.getElementById('newPcModalAddButton').addEventListener('click', addPc);
+			document.getElementById('newNpcModalAddButton').addEventListener('click', addNpc);
+			document.getElementById('shapeColorModalSetButton').addEventListener('click', mapSetShapeColor);
+			document.getElementById('shapeDamageModalSetButton').addEventListener('click', mapTakeDamage);
 
-  			$('#rollPcInitiatives').click(rollPcInitiatives);
-  			$('#resetPcsHp').click(resetPcsHp);
-  			$('#rollNpcInitiatives').click(rollNpcInitiatives);
-  			$('#rollNpcsLink').click(rollNpcInitiatives);
-  			$('#rollAllLink').click(rollAllInitiatives);
+			document.getElementById('rollPcInitiatives').addEventListener('click', rollPcInitiatives);
+			document.getElementById('resetPcsHp').addEventListener('click', resetPcsHp);
+			document.getElementById('rollNpcInitiatives').addEventListener('click', rollNpcInitiatives);
+			document.getElementById('rollNpcsLink').addEventListener('click', rollNpcInitiatives);
+			document.getElementById('rollAllLink').addEventListener('click', rollAllInitiatives);
 
-  			$('#battlefieldList').on('change', 'input', updateBattlefieldInfo);
-  			$('#battlefieldList').on('click', '.selectBattlefieldLink', selectBattlefield);
-  			$('#battlefieldList').on('click', '.removeLink', removeBattlefield);
+			document.getElementById('removeNpcsLink').addEventListener('click', removeAllNpcs);
 
-  			$('#pcList').on('change', 'input', updatePcInfo);
-  			$('#pcList').on('click', '.rollInitiativeLink', rollInitiativeForPc);
-  			$('#pcList').on('click', '.removeLink', removePc);
+			document.getElementById('mapDamageButton').addEventListener('click', mapBeginTakeDamage);
+			document.getElementById('mapColorButton').addEventListener('click', mapBeginSetShapeColor);
 
-  			$('#npcList').on('change', 'input', updateNpcInfo);
-  			$('#npcList').on('click', '.rollInitiativeLink', rollInitiativeForNpc);
-  			$('#npcList').on('click', '.removeLink', removeNpc);
-
-  			$('#removeNpcsLink').click(removeAllNpcs);
-
-  			$('#sortedList').on('change', 'input', updatePcDamage);
-  			$('#npcCloneList').on('change', 'input', updateNpcClones);
-
-  			$('#mapDamageButton').click(mapBeginTakeDamage);
-  			$('#mapColorButton').click(mapBeginSetShapeColor);
-  			$(window).click(mapHideMenu);
-  		});
+			window.addEventListener('click', mapHideMenu);
   	</script>
 	</body>
 </html>
