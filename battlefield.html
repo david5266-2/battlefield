@@ -1,0 +1,2019 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+
+    <title>Battlefields</title>
+
+		<style>
+			body, input {
+				background-color: #000;
+				color: #999;
+				font-size: 1.25em;
+				font-family: Arial, Tahoma, sans-serif;
+			}
+
+			input[type="text"],
+			input[type="checkbox"] {
+				background-color: #ccc;
+			}
+
+			.nav-link {
+				color: #ccc;
+			}
+
+			#tabList > .nav-link.active {
+				background-color: #6c757d;
+				color: #fff;
+			}
+
+			div.container {
+				margin-top: 10px;
+			}
+
+			#sortedList .row,
+			#npcCloneList .row {
+				font-size: 1.5em;
+				border-bottom: solid 1px #ccc;
+			}
+
+			#npcList input {}
+
+			.titleRow {
+				font-weight: bold;
+			}
+
+			#pcList,
+			#npcList,
+			#sortedList,
+			#battlefieldList {
+				margin-top: 15px;
+			}
+
+			#pcList .row,
+			#npcList .row,
+			#battlefieldList .row {
+				margin-bottom: 10px;
+			}
+
+			#npcCloneList {
+				margin-top: 50px;
+			}
+
+			.buttonRow {
+				margin-top: 15px;
+			}
+
+			.removeLink,
+			.selectBattlefieldLink,
+			.rollInitiativeLink {
+				color: #999;
+				text-decoration: none;
+			}
+
+			.form-check .form-check-input,
+			.selectBattlefieldLink {
+				float: right;
+			}
+
+			#newPcModal .modal-content,
+			#newNpcModal .modal-content,
+			#newBattlefieldModal .modal-content,
+			#shapeColorModal .modal-content {
+				border: solid 1px #dee2e6;
+				background-color: #000;
+			}
+
+			#battleMapParent {
+				margin-top: 20px;
+				width: 100%;
+			}
+
+			#battleMap {
+        background-color: transparent;
+        height:100%;
+        width: 100%;
+        background-color: #333;
+        background-image: linear-gradient(rgba(255, 255, 255, .1) .1em, transparent .1em), linear-gradient(90deg, rgba(255, 255, 255, .1) .1em, transparent .1em);
+        background-size: 25px 25px;
+      }
+
+      #mapMenu {
+        display: none;
+        position: absolute;
+        width: 100px;
+        background-color: #fff;
+        box-shadow: 0 0 5px #999;
+        border-radius: 3px;
+      }
+
+      #mapMenu button {
+        width: 100%;
+        background-color: #ccc;
+        border: none;
+        margin: 0;
+        padding: 10px;
+      }
+
+      #mapMenu button:hover {
+        background-color: #fff;
+      }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row">
+				<div class="col">
+					<h2 id="selectedBattlefieldName"></h2>
+				</div>
+			</div>
+			<div class="row">
+
+				<div class="col">
+
+					<nav>
+						<div class="nav nav-tabs" id="tabList" role="tablist">
+							<button class="nav-link" id="battlefieldsTab" data-bs-toggle="tab" data-bs-target="#battlefieldsContent" role="tab">Battlefields</button>
+							<button class="nav-link active" id="pcsTab" data-bs-toggle="tab" data-bs-target="#pcsContent" role="tab">PCs</button>
+							<button class="nav-link" id="npcsTab" data-bs-toggle="tab" data-bs-target="#npcsContent" role="tab">NPCs</button>
+							<button class="nav-link" id="sortedTab" data-bs-toggle="tab" data-bs-target="#battleContent" role="tab">Battle</button>
+							<button class="nav-link" id="mapTab" data-bs-toggle="tab" data-bs-target="#mapContent" role="tab">Map</button>
+						</div>
+					</nav>
+
+					<div class="tab-content" id="tabContents">
+
+						<div id="battlefieldsContent" class="tab-pane fade" role="tabpanel">
+							<div class="buttonRow">
+								<a href="#" id="addBattlefieldLink" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#newBattlefieldModal" title="Add a new battlefield to the list"><i class="bi-plus-circle"></i> Add</a>
+							</div>
+
+							<div id="battlefieldList">
+							</div>
+						</div>
+
+						<div id="pcsContent" class="tab-pane fade show active" role="tabpanel">
+							<h2 id="pcsBattfieldName"></h2>
+
+							<div class="buttonRow">
+								<a href="#" id="addPcLink" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#newPcModal" title="Add a new PC to the list"><i class="bi-plus-circle"></i> Add</a>
+								&nbsp;&nbsp;
+								<a href="#" id="rollPcInitiatives" class="btn btn-secondary" title="Roll initiative for the PCs"><i class="bi-arrow-right-circle"></i> Roll Initiative</a>
+								&nbsp;&nbsp;
+								<a href="#" id="resetPcsHp" class="btn btn-secondary" title="Roll initiative for the PCs"><i class="bi-arrow-counterclockwise"></i> Reset PC HP</a>
+							</div>
+
+							<div id="pcList">
+							</div>
+						</div>
+
+						<div id="npcsContent" class="tab-pane fade" role="tabpanel">
+							<h2 id="npcsBattlefieldName"></h2>
+
+							<div class="buttonRow">
+								<a href="#" id="addNpcLink" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#newNpcModal" title="Add a new NPC to the list"><i class="bi-plus-circle"></i> Add</a>
+								&nbsp;&nbsp;
+								<a href="#" id="rollNpcInitiatives" class="btn btn-secondary" title="Roll initiative for the NPCs"><i class="bi-arrow-right-circle"></i> Roll Initiative</a>
+							</div>
+
+							<div id="npcList">
+							</div>
+
+							<div class="buttonRow">
+								<a href="#" id="removeNpcsLink" class="btn btn-secondary" title="Remove all NPCs from the list"><i class="bi-x-circle-fill"></i> Remove All</a>
+							</div>
+						</div>
+
+						<div id="battleContent" class="tab-pane fade" role="tabpanel">
+							<h2 id="battleBattfieldName"></h2>
+
+							<div class="buttonRow">
+								<a href="#" id="rollNpcsLink" class="btn btn-secondary" title="Roll initiative for NPCs only"><i class="bi-arrow-right-circle"></i> Roll NPCs</a>
+								&nbsp;&nbsp;
+								<a href="#" id="rollAllLink" class="btn btn-secondary" title="Roll initiative for all PCs and NPCs"><i class="bi-arrow-right-circle-fill"></i> Roll All</a>
+							</div>
+							
+							<div id="sortedList">
+							</div>
+
+							<div id="npcCloneList">
+							</div>
+						</div>
+
+						<div id="mapContent" class="tab-pane fade" role="tabpanel">
+							<div id="battleMapParent">
+								<div id="battleMap"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="mapMenu">
+      <div>
+        <button id="mapColorButton">Color</button>
+        <button id="mapDamageButton">Damage</button>
+      </div>
+    </div>
+
+		<div id="newPcModal" class="modal fade" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Add PC</h5>
+						<button id="newPcModalCloseButton" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="mb-3">
+								<label for="newPcName" class="col-form-label">Name</label>
+								<input id="newPcName" type="text" class="form-control" placeholder="Name" />
+							</div>
+							<div class="mb-3">
+								<label for="newPcMaxHp" class="col-form-label">Max Hit Points</label>
+								<input id="newPcMaxHp" type="text" class="form-control" placeholder="Maximum hit points" />
+							</div>
+							<div class="mb-3">
+								<label for="newPcAc" class="col-form-label">Armor Class</label>
+								<input id="newPcAc" type="text" class="form-control" placeholder="Armor class" />
+							</div>
+							<div class="mb-3">
+								<label for="newPcInitBonus" class="col-form-label">Initiative Bonus</label>
+								<input id="newPcInitBonus" type="text" class="form-control" placeholder="Initiative bonus" />
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button id="newPcModalAddButton" type="button" class="btn btn-secondary">Add PC</button>
+						<button id="newPcModalCancelButton" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="newNpcModal" class="modal fade" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Add NPC</h5>
+						<button id="newNpcModalCloseButton" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="mb-3">
+								<label for="newNpcName" class="col-form-label">Name</label>
+								<input id="newNpcName" type="text" class="form-control" placeholder="Name" />
+							</div>
+							<div class="mb-3">
+								<label for="newNpcCount" class="col-form-label">Count</label>
+								<input id="newNpcCount" type="text" class="form-control" placeholder="Number of NPCs of this type" />
+							</div>
+							<div class="mb-3">
+								<label for="newNpcMaxHp" class="col-form-label">Max Hit Points</label>
+								<input id="newNpcMaxHp" type="text" class="form-control" placeholder="Maximum hit points" />
+							</div>
+							<div class="mb-3">
+								<label for="newNpcAc" class="col-form-label">Armor Class</label>
+								<input id="newNpcAc" type="text" class="form-control" placeholder="Armor class" />
+							</div>
+							<div class="mb-3">
+								<label for="newNpcInitBonus" class="col-form-label">Initiative Bonus</label>
+								<input id="newNpcInitBonus" type="text" class="form-control" placeholder="Initiative bonus" />
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button id="newNpcModalAddButton" type="button" class="btn btn-secondary">Add NPC</button>
+						<button id="newNpcModalCancelButton" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="newBattlefieldModal" class="modal fade" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Add Battlefield</h5>
+						<button id="newBattlefieldModalCloseButton" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="mb-3">
+								<label for="newBattlefieldName" class="col-form-label">Name</label>
+								<input id="newBattlefieldName" type="text" class="form-control" placeholder="Name" />
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button id="newBattlefieldModalAddButton" type="button" class="btn btn-secondary">Add Battlefield</button>
+						<button id="newBattlefieldModalCancelButton" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="shapeColorModal" class="modal fade" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Set COlor</h5>
+						<button id="shapeColorModalCloseButton" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="mb-3">
+								<label for="colorList" class="col-form-label">Color</label>
+								<select id="colorList" class="form-select">
+									<option value="black" style="background-color: black;">Black</option>
+									<option value="gray" style="background-color: gray;">Gray</option>
+									<option value="white" style="background-color: white;">White</option>
+									<option value="red" style="background-color: red">Red</option>
+									<option value="green" style="background-color: green;">Green</option>
+									<option value="blue" style="background-color: blue;">Blue</option>
+									<option value="purple" style="background-color: purple;">Purple</option>
+									<option value="orange" style="background-color: orange;">Orange</option>
+									<option value="yellow" style="background-color: yellow;">Yellow</option>
+									<option value="brown" style="background-color: brown;">Brown</option>
+									<option value="lightsalmon" style="background-color: lightsalmon">Light Salmon</option>
+									<option value="salmon" style="background-color: salmon">Salmon</option>
+									<option value="darksalmon" style="background-color: darksalmon">Dark Salmon</option>
+									<option value="darkred" style="background-color: darkred">Dark Red</option>
+									<option value="crimson" style="background-color: crimson;">Crimson</option>
+									<option value="lightpink" style="background-color: lightpink">Light Pink</option>
+									<option value="hotpink" style="background-color: hotpink">Hot Pink</option>
+									<option value="deeppink" style="background-color: deeppink">Deep Pink</option>
+									<option value="tomato" style="background-color: tomato">Deep Tomato</option>
+									<option value="orangered" style="background-color: orangered;">Orange Red</option>
+									<option value="gold" style="background-color: gold;">Gold</option>
+									<option value="darkorange" style="background-color: darkorange;">Dark Orange</option>
+									<option value="darkkhaki" style="background-color: darkkhaki;">Dark Khaki</option>
+									<option value="khaki" style="background-color: khaki;">Khaki</option>
+									<option value="lightyellow" style="background-color: lightyellow;">Light Yellow</option>
+									<option value="papayawhip" style="background-color: papayawhip;">Papaya Whip</option>
+									<option value="chocolate" style="background-color: chocolate;">Chocolate</option>
+									<option value="maroon" style="background-color: maroon;">Maroon</option>
+									<option value="cornsilk" style="background-color: cornsilk;">Cornsilk</option>
+									<option value="tan" style="background-color: tan;">Tan</option>
+									<option value="sienna" style="background-color: sienna;">Sienna</option>
+									<option value="lightgreen" style="background-color: lightgreen;">Light Green</option>
+									<option value="greenyellow" style="background-color: greenyellow;">Green Yellow</option>
+									<option value="forestgreen" style="background-color: forestgreen;">Forest Green</option>
+									<option value="darkgreen" style="background-color: darkgreen;">Dark Green</option>
+									<option value="olive" style="background-color: olive;">Olive</option>
+									<option value="lightcyan" style="background-color: lightcyan;">Light Cyan</option>
+									<option value="cyan" style="background-color: cyan;">Cyan</option>
+									<option value="darkcyan" style="background-color: darkcyan;">Dark Cyan</option>
+									<option value="lightblue" style="background-color: lightblue;">Light Blue</option>
+									<option value="cornflowerblue" style="background-color: cornflowerblue;">Cornflower Blue</option>
+									<option value="dodgerblue" style="background-color: dodgerblue;">Dodger Blue</option>
+									<option value="blueviolet" style="background-color: blueviolet;">Blue Violet</option>
+									<option value="darkblue" style="background-color: darkblue;">Dark Blue</option>
+									<option value="midnightblue" style="background-color: midnightblue;">Midnight Blue</option>
+									<option value="violet" style="background-color: violet;">Violet</option>
+									<option value="slateblue" style="background-color: slateblue;">Slate Blue</option>
+									<option value="antiquewhite" style="background-color: antiquewhite;">Antique White</option>
+									<option value="ghostwhite" style="background-color: ghostwhite;">Ghost White</option>
+									<option value="gainsboro" style="background-color: gainsboro;">Gainsboro</option>
+									<option value="lightgray" style="background-color: lightgray;">Light Gray</option>
+									<option value="darkgray" style="background-color: darkgray;">Dark Gray</option>
+								</select>
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button id="shapeColorModalSetButton" type="button" class="btn btn-secondary">Set Color</button>
+						<button id="shapeColorModalCancelButton" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="shapeDamageModal" class="modal fade" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Set COlor</h5>
+						<button id="shapeDamageModalCloseButton" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="mb-3">
+								<label for="shapeDamage" class="col-form-label">Damage</label>
+								<input id="shapeDamage" type="text" class="form-control" placeholder="Damage" />
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button id="shapeDamageModalSetButton" type="button" class="btn btn-secondary">Take Damage</button>
+						<button id="shapeDamageModalCancelButton" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+  		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  		crossorigin="anonymous"></script>
+  	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+  	<script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
+  	<script src="https://unpkg.com/konva@8.1.3/konva.min.js"></script>
+
+  	<script id="battfieldTitleTemplate" type="text/x-handlebars-template">
+  		<div class="row setTitleRow">
+  			<div class="col-sm-1">
+  				&nbsp;
+				</div>
+  			<div class="col">
+  				<b>Name</b>
+				</div>
+			  <div class="col-sm-1">
+			  	&nbsp;
+			  </div>
+			</div> 
+  	</script>
+
+  	<script id="battlefieldRowTemplate" type="text/x-handlebars-template">
+  		<div class="row" data-id="{{id}}">
+  			<div class="col-sm-1">
+  				<a href="#" class="selectBattlefieldLink" title="Use the PCs and NPCs in {{name}}">
+			  		<i class="bi-arrow-right-circle"></i>
+			  	</a>
+				</div>
+  			<div class="col-sm-4">
+			    <input type="text" class="form-control battlefieldName" placeholder="Name" value="{{name}}" title="Set name">
+			  </div>
+			  <div class="col-sm-1">
+			  	<a href="#" class="removeLink" title="Remove {{name}} from the list">
+			  		<i class="bi-x-circle"></i>
+			  	</a>
+			  </div>
+			</div> 
+  	</script>
+
+  	<script id="pcTitleTemplate" type="text/x-handlebars-template">
+  		<div class="row titleRow">
+			  <div class="col">
+			    Name
+			  </div>
+			  <div class="col">
+			    Max HP
+			  </div>
+			  <div class="col">
+			    Current HP
+			  </div>
+			  <div class="col">
+			    AC
+			  </div>
+			  <div class="col">
+			    Init. Bonus
+			  </div>
+			  <div class="col">
+			    Initiative
+			  </div>
+			  <div class="col">
+			  	&nbsp;
+			  </div>
+			</div> 
+  	</script>
+
+  	<script id="pcRowTemplate" type="text/x-handlebars-template">
+  		<div class="row" data-id="{{id}}">
+			  <div class="col">
+			    <input type="text" class="form-control pcName" placeholder="Name" value="{{name}}" title="PC name">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control maxHp" placeholder="Max HP" value="{{maxHp}}" title="Max hit points">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control hp" placeholder="Current HP" value="{{hp}}" title="Current hit points">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control ac" placeholder="AC" value="{{ac}}" title="Armor class">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control initBonus" placeholder="Initiative bonus" value="{{initBonus}}" title="Initiative bonus">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control init" placeholder="Initiative" value="{{init}}" title="Current initiative roll">
+			  </div>
+			  <div class="col">
+			  	<a href="#" class="rollInitiativeLink" title="Roll initiative for {{name}}">
+			  		<i class="bi-arrow-right-circle"></i>
+			  	</a>&nbsp;
+			  	<a href="#" class="removeLink" title="Remove {{name}} from the list">
+			  		<i class="bi-x-circle"></i>
+			  	</a>
+			  </div>
+			</div>
+  	</script>
+
+  	<script id="npcTitleTemplate" type="text/x-handlebars-template">
+  		<div class="row titleRow">
+			  <div class="col">
+			    Name
+			  </div>
+			  <div class="col">
+			    Count
+			  </div>
+			  <div class="col">
+			    Max HP
+			  </div>
+			  <div class="col">
+			    AC
+			  </div>
+			  <div class="col">
+			    Init. Bonus
+			  </div>
+			  <div class="col">
+			    Initiative
+			  </div>
+			  <div class="col">
+			  	&nbsp;
+			  </div>
+			</div> 
+  	</script>
+
+  	<script id="npcRowTemplate" type="text/x-handlebars-template">
+  		<div class="row" data-id="{{id}}">
+			  <div class="col">
+			    <input type="text" class="form-control pcName" placeholder="Name" value="{{name}}" title="NPC name">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control npcCount" placeholder="Count" value="{{count}}" title="Number of NPCs">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control maxHp" placeholder="Max hit points" value="{{maxHp}}" title="Maximum hit points">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control ac" placeholder="AC" value="{{ac}}" title="Armor class">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control initBonus" placeholder="Initiative bonus" value="{{initBonus}}" title="Initiative bonus">
+			  </div>
+			  <div class="col">
+			    <input type="text" class="form-control init" placeholder="Initiative" value="{{init}}" title="Current initiative roll">
+			  </div>
+			  <div class="col">
+			  	<a href="#" class="rollInitiativeLink" title="Roll initiative for {{name}}">
+			  		<i class="bi-arrow-right-circle"></i>
+			  	</a>&nbsp;
+			  	<a href="#" class="removeLink" title="Remove {{name}} from the list">
+			  		<i class="bi-x-circle"></i>
+			  	</a>
+			  </div>
+			</div>
+  	</script>
+
+  	<script id="sortedTitleTemplate" type="text/x-handlebars-template">
+  		<div class="row sortedTitle">
+  			<div class="col">
+  				<b>Name</b>
+				</div>
+  			<div class="col">
+  				<b>Initiative</b>
+				</div>
+  			<div class="col">
+  				<b>AC</b>
+				</div>
+  			<div class="col">
+  				<b>Max HP</b>
+				</div>
+  			<div class="col">
+  				<b>Current HP</b>
+				</div>
+  			<div class="col-sm-1">
+  				<b>Damage</b>
+				</div>
+  	</script>
+
+  	<script id="sortedRowTemplate" type="text/x-handlebars-template">
+  		<div class="row" data-id="{{id}}">
+  			<div class="col">
+  				{{name}}
+				</div>
+  			<div class="col">
+  				{{init}}
+				</div>
+  			<div class="col">
+  				{{ac}}
+				</div>
+  			<div class="col">
+  				{{maxHp}}
+				</div>
+  			<div class="col">
+  				{{hp}}
+				</div>
+  			<div class="col-sm-1">
+  				<input type="text" class="form-control hpDamage" placeholder="Damage" />
+				</div>
+  	</script>
+
+  	<script id="npcCloneTitleTemplate" type="text/x-handlebars-template">
+  		<div class="row npcCloneTitle">
+  			<div class="col">
+  				<b>Name</b>
+				</div>
+  			<div class="col">
+  				<b>AC</b>
+				</div>
+  			<div class="col">
+  				<b>Max HP</b>
+				</div>
+  			<div class="col">
+  				<b>Current HP</b>
+				</div>
+  			<div class="col-sm-1">
+  				<b>Damage</b>
+				</div>
+  	</script>
+
+  	<script id="npcCloneRowTemplate" type="text/x-handlebars-template">
+  		<div class="row" data-id="{{id}}" data-index={{index}}>
+  			<div class="col">
+  				{{name}} {{index}}
+				</div>
+  			<div class="col">
+  				{{ac}}
+				</div>
+  			<div class="col">
+  				{{maxHp}}
+				</div>
+  			<div class="col">
+  				{{hp}}
+				</div>
+  			<div class="col-sm-1">
+  				<input type="text" class="form-control hpDamage" placeholder="Damage" />
+				</div>
+  	</script>
+
+  	<script>
+	    function generateId() {
+	      return Math.floor(Math.random() * 10000000000000001);
+	    }
+
+	    class StateHandler {
+	    	constructor(options) {
+	    	}
+
+	    	save(battlefields, battlefield) {
+	    		let state = {
+	    			currentBattlefield: battlefield.id,
+	    			battlefields: []
+	    		};
+
+	    		battlefields.forEach(b => state.battlefields.push(b.getState()));
+	    		let json = JSON.stringify(state);
+	    		localStorage.setItem('battlefields', json);
+	    	}
+
+	    	load() {
+	    		let json = localStorage.getItem('battlefields');
+	    		if (!json) return this.defaultState();
+
+	    		let state = JSON.parse(json);
+	    		if (!state) return this.defaultState();
+
+	    		let battlefields = [];
+	    		state.battlefields.forEach(b => {
+	    			battlefields.push(new Battlefield(b));
+	    		});
+
+	    		let battlefield = battlefields.filter(b => {
+	    			return b.id === state.currentBattlefield;
+	    		})[0];
+	    		if (!battlefield) battlefield = battlefields[0];
+	    		if (!battlefield) return defaultState();
+
+	    		battlefield.mapActivate();
+
+	    		return {
+	    			battlefield: battlefield,
+	    			battlefields: battlefields
+	    		};
+	    	}
+
+	    	defaultState() {
+	    		let battlefield = new Battlefield();
+	    		return {
+	    			battlefield: battlefield,
+	    			battlefields: [battlefield]
+	    		};
+	    	}
+	    }
+
+	    class PC {
+        constructor(options) {
+          options = options || {};
+          options.id = options.id || generateId();
+          options.name = options.name || 'Unknown';
+      		if (options.maxHp !== 0) options.maxHp = options.maxHp || 8;
+      		if (options.hp !== 0) options.hp = options.hp || 8;
+      		if (options.ac !== 0) options.ac = options.ac || 8;
+      		if (options.init !== 0) options.init = options.init || 8;
+      		if (options.initBonus !== 0) options.initBonus = options.initBonus || 8;
+          options.color = options.color || '#000';
+          options.pos = options.pos || {};
+      		if (options.pos.x !== 0) options.pos.x = options.pos.x || 50;
+      		if (options.pos.y !== 0) options.pos.y = options.pos.y || 50;
+          Object.assign(this, options);
+        }
+
+        rollInitiative() {
+          let roll = Math.floor(Math.random() * 20) + 1;
+          this.init = roll + this.initBonus;
+          return this.init;
+        }
+
+        takeDamage(damage) {
+          if (!damage) return;
+
+          let hp = this.hp - damage;
+          if (hp < 0) hp = 0;
+          if (hp > this.maxHp) hp = this.maxHp;
+          this.hp = hp;
+        }
+
+        isDead() {
+        	return this.hp <= 0;
+        }
+
+        resetHp() {
+        	this.hp = this.maxHp;
+        }
+      }
+
+      class NPC extends PC {
+        constructor(options) {
+          super(options);
+          
+          options = options || {};
+          if (options.count !== 0) options.count = options.count || 1;
+          options.clones = options.clones || [];
+          // The clones may have been passed in as plain JSON.
+          // If so, convert to NPCClone classes.
+          if (options.clones.length && !(options.clones[0] instanceof NPCClone)) {
+            for (let i = 0; i < options.clones.length; i++) {
+            	let cloneOptions = options.clones[i];
+            	cloneOptions.npc = this;
+              options.clones[i] = new NPCClone(cloneOptions);
+            }
+          }
+          Object.assign(this, options);
+          this.updateAllClones();
+        }
+
+        updateAllClones() {
+        	if (!this.clones || !this.clones.length) {
+        		this.clones = [];
+        	}
+
+        	this.clones.length = this.count;
+
+        	for (let i = 0; i < this.clones.length; i++) {
+        		if (this.clones[i]) continue;
+
+        		this.clones[i] = new NPCClone({
+        			npc: this,
+        			hp: this.maxHp
+        		});
+        	}
+        }
+
+        cloneTakeDamage(index, damage) {
+        	let clone = this.clones[index];
+        	if (!clone) return;
+
+        	clone.takeDamage(damage);
+        }
+      }
+
+      class NPCClone {
+      	constructor(options) {
+      		this.maxHp = options.npc.maxHp;
+      		if (options.hp !== 0) options.hp = options.hp || options.npc.hp;
+      		this.hp = options.hp;
+      		this.ac = options.npc.ac;
+
+      		options.pos = options.pos || {};
+      		if (options.pos.x !== 0) options.pos.x = options.pos.x || 150;
+      		if (options.pos.y !== 0) options.pos.y = options.pos.y || 150;
+      		this.pos = options.pos;
+      	}
+
+        takeDamage(damage) {
+          if (!damage) return;
+
+          let hp = this.hp - damage;
+          if (hp < 0) hp = 0;
+          if (hp > this.maxHp) hp = this.maxHp;
+          this.hp = hp;
+        }
+
+        isDead() {
+        	return this.hp <= 0;
+        }
+      }
+
+      class Battlefield extends EventTarget {
+        constructor(options) {
+          super();
+
+          options = options || {};
+          this.id = options.id || generateId();
+          this.name = options.name || 'Unknown';
+
+          this.pcs = options.pcs || [];
+          // The PCs may have been passed in as plain JSON.
+          // If so, convert to PC classes.
+          if (this.pcs.length && !(this.pcs[0] instanceof PC)) {
+            for (let i = 0; i < this.pcs.length; i++) {
+              this.pcs[i] = new PC(this.pcs[i]);
+            }
+          }
+          this.sortByName(this.pcs);
+
+          this.npcs = options.npcs || [];
+          // The NPCs may have been passed in as plain JSON.
+          // If so, convert to NPC classes.
+          if (this.npcs.length && !(this.npcs[0] instanceof NPC)) {
+            for (let i = 0; i < this.npcs.length; i++) {
+              this.npcs[i] = new NPC(this.npcs[i]);
+            }
+          }
+          this.sortByName(this.npcs);
+        }
+
+        mapActivate() {
+        	this.map = new BattlefieldMap();
+          this.map.addPcs(this.pcs);
+          this.map.addNpcs(this.npcs);
+
+          this.map.addEventListener('updated', this.onUpdated.bind(this));
+        }
+
+        mapDeactivate() {
+        	if (!this.map) return;
+
+        	this.map.removeEventListener('updated', this.onUpdated.bind(this));
+        	this.map.deactivate();
+        }
+
+        onUpdated(e) {
+        	this.dispatchEvent(new Event('updated'));
+        }
+
+        mapBeginTakeDamage() {
+        	this.map.beginTakeDamage();
+        }
+
+        mapTakeDamage() {
+        	this.map.takeDamage();
+        }
+
+        mapHideMenu() {
+        	this.map.hideMenu();
+        }
+
+        mapBeginSetShapeColor() {
+        	this.map.beginSetShapeColor();
+        }
+
+        mapSetShapeColor() {
+        	this.map.setShapeColor();
+        }
+
+        getAllByInitiative() {
+          let sorted = this.pcs;
+          sorted = sorted.concat(this.npcs);
+          this.sortByInitiative(sorted);
+          return sorted;
+        }
+
+        getNpcsByInitiative() {
+        	let sorted = this.npcs;
+        	this.sortByInitiative(sorted);
+        	return sorted;
+        }
+
+        sortByInitiative(arr) {
+          arr.sort((a, b) => {
+            if (a.init > b.init) return -1;
+            if (a.init < b.init) return 1;
+            if (a.name > b.name) return 1;
+            if (a.name < b.name) return -1;
+            return 0;
+          });
+        }
+
+        sortByName(arr) {
+          arr.sort((a, b) => {
+            if (a.name > b.name) return 1;
+            if (a.name < b.name) return -1;
+            return 0;
+          });
+        }
+
+        addPc(pc) {
+          this.pcs.push(pc);
+          this.sortByName(this.pcs);
+        }
+
+        getPc(id) {
+          return this.getPcFromArray(id, this.pcs);
+        }
+
+        removePc(id) {
+        	this.removePcFromArray(id, this.pcs);
+        	this.map.removeShapes(id);
+        }
+
+        addNpc(npc) {
+          this.npcs.push(npc);
+          this.sortByName(this.npcs);
+        }
+
+        getNpc(id) {
+          return this.getPcFromArray(id, this.npcs);
+        }
+
+        removeNpc(id) {
+        	this.removePcFromArray(id, this.npcs);
+        	this.map.removeShapes(id);
+        }
+
+        removeAllNpcs() {
+        	this.npcs = [];
+        }
+
+        getPcFromArray(id, arr) {
+          return arr.filter(obj => {
+            return obj.id === id;
+          })[0];
+        }
+
+        removePcFromArray(id, arr) {
+        	for (let i = 0; i < arr.length; i++) {
+        		if (arr[i].id !== id) continue;
+
+        		arr.splice(i, 1);
+        	}
+        }
+
+        rollInitiativeForAll() {
+          this.rollInitiativeForPcs();
+          this.rollInitiativeForNpcs();
+        }
+
+        rollInitiativeForPcs() {
+          this.pcs.forEach(pc => pc.rollInitiative());
+        }
+
+        rollInitiativeForNpcs() {
+          this.npcs.forEach(npc => npc.rollInitiative());
+        }
+
+        resetPcsHp() {
+        	this.pcs.forEach(pc => pc.resetHp());
+        }
+
+        getState() {
+          return {
+            id: this.id,
+            name: this.name,
+            pcs: this.pcs,
+            npcs: this.npcs
+          };
+        }
+      }
+
+      class BattlefieldMap extends EventTarget {
+        constructor(options) {
+          super();
+
+          options = options || {};
+          options.container = options.container || 'battleMap';
+          options.menu = options.menu || 'mapMenu';
+          options.colorButton = options.colorButton || 'mapColorButton';
+          options.damageButton = options.damageButton || 'mapDamageButton';
+
+          let container = document.querySelector('#' + options.container);
+          container.innerHTML = '';
+          this.WIDTH = 1000;
+          this.HEIGHT = 1000;
+          this.GRID_SIZE = 25;
+          this.GUIDELINE_OFFSET = this.GRID_SIZE;
+
+          this.stage = new Konva.Stage({
+            container: options.container,
+            width: this.WIDTH,
+            height: this.HEIGHT
+          });
+
+          this.layer = new Konva.Layer();
+          this.stage.add(this.layer);
+
+          this.tooltipLayer = new Konva.Layer();
+          this.tooltip = new Konva.Text({
+            text: '',
+            fontSize: 20,
+            padding: 5,
+            textFill: '#fff',
+            fill: '#fff',
+            alpha: 0.5,
+            visible: false
+          });
+          this.tooltipLayer.add(this.tooltip);
+          this.stage.add(this.tooltipLayer);
+
+          this.currentShape = null;
+          this.menu = document.getElementById(options.menu);
+
+          this.stage.on('contextmenu', this.onStageContextMenu.bind(this));
+          this.layer.on('dragmove', this.onLayerDragMove.bind(this));
+          this.layer.on('dragend', this.onLayerDragEnd.bind(this));
+        }
+
+        onStageContextMenu(e) {
+        	e.evt.preventDefault();
+
+	        // Ignore if on an empty space.
+	        if (e.target === this.stage) return;
+
+	        this.currentShape = e.target;
+	        // Show the menu.
+	        this.menu.style.display = 'initial';
+	        let rect = this.stage.container().getBoundingClientRect();
+	        this.menu.style.top = rect.top + this.stage.getPointerPosition().y + 4 + 'px';
+	        this.menu.style.left = rect.left + this.stage.getPointerPosition().x + 4 + 'px';
+        }
+
+        onLayerDragMove(e) {
+          this.clearAllGuideLines();
+
+          let lineGuideStops = this.getLineGuideStops(e.target);
+          let itemBounds = this.getObjectSnappingEdges(e.target);
+          let guides = this.getGuides(lineGuideStops, itemBounds);
+
+          if (!guides.length) return;
+
+          this.drawGuides(guides);
+
+          let absPos = e.target.absolutePosition();
+
+          // Force object position.
+          guides.forEach((lg) => {
+            switch (lg.snap) {
+              case 'start': {
+                switch (lg.orientation) {
+                  case 'H': {
+                    absPos.y = lg.lineGuide + lg.offset;
+                    break;
+                  }
+                  case 'V': {
+                    absPos.x = lg.lineGuide + lg.offset;
+                    break;
+                  }
+                }
+                break;
+              }
+            }
+          });
+
+          e.target.absolutePosition(absPos);
+        }
+
+        onLayerDragEnd(e) {
+          this.clearAllGuideLines();
+          
+          let c = e.target.getAttr('character');
+          if (e.target.getAttr('isNpc')) {
+          	c = e.target.getAttr('clone');
+          }
+          c.pos = e.target.absolutePosition();
+
+          this.emitUpdated();
+        }
+
+        deactivate() {
+        	this.stage.off('contextmenu', this.onStageContextMenu.bind(this));
+          this.layer.off('dragmove', this.onLayerDragMove.bind(this));
+          this.layer.off('dragend', this.onLayerDragEnd.bind(this));
+        	this.stage.destroyChildren();
+        }
+
+        beginSetShapeColor() {
+        	if (!this.currentShape) return;
+
+					let group = this.currentShape.getParent();
+          let char = group.getAttr('character');
+
+          $('#colorList').val(char.color);
+          if (!this.colorModal) {
+	        	this.colorModal = new bootstrap.Modal(document.getElementById('shapeColorModal'));
+	        }
+        	this.colorModal.show();
+        }
+
+        setShapeColor() {
+        	this.colorModal.hide();
+
+        	if (!this.currentShape) return;
+
+        	let color = $('#colorList').val();
+        	if (!color) return;
+
+          this.currentShape.fill(color);
+
+					let group = this.currentShape.getParent();
+          let char = group.getAttr('character');
+          char.color = color;
+          // If an NPC, update the color for all of the NPC's shapes.
+          if (group.getAttr('isNpc')) {
+          	let groups = this.layer.getChildren(node => {
+          		return node.getAttr('character') === char;
+          	});
+
+          	groups.forEach(group => { 
+          		let shape = group.getChildren(child => {
+          			let className = child.getClassName();
+        				return className === 'Circle' || className === 'Rect';
+          		})[0];
+          		shape.fill(color); 
+          	});
+          }
+          this.emitUpdated();
+        }
+
+        beginTakeDamage() {
+        	if (!this.currentShape) return;
+
+          if (!this.damageModal) {
+	        	this.damageModal = new bootstrap.Modal(document.getElementById('shapeDamageModal'));
+	        }
+        	this.damageModal.show();
+        }
+
+        takeDamage() {
+        	this.damageModal.hide();
+
+          if (!this.currentShape) return;
+
+          let damage = parseInt($('#shapeDamage').val());
+          if (!damage) return;
+
+          let group = this.currentShape.getParent();
+          let c = group.getAttr('character');
+          if (group.getAttr('isNpc')) {
+          	c = group.getAttr('clone');
+          }
+          c.takeDamage(damage);
+          this.showHideDeadStatus(group, c);
+          this.emitUpdated();
+        }
+
+        hideMenu() {
+        	this.menu.style.display = 'none';
+        }
+
+        showHideDeadStatus(group, c) {
+        	let text = group.getChildren(child => {
+    				return child.getClassName() === 'Text';
+      		})[0];
+      		if (c.isDead()) {
+      			text.show();
+      		} else {
+      			text.hide();
+      		}
+        }
+
+        emitUpdated() {
+          this.dispatchEvent(new Event('updated'));
+        }
+
+        clearAllGuideLines() {
+          this.layer.find('.guide-line').forEach((l) => l.destroy());
+        }
+
+        getLineGuideStops() {
+          let horizontal = [];
+          for (let h = 0; h < this.HEIGHT-this.GRID_SIZE; h += this.GRID_SIZE) {
+            horizontal.push(h);
+          }
+
+          let veritical = [];
+          for (let v = 0; v < this.WIDTH-this.GRID_SIZE; v += this.GRID_SIZE) {
+            veritical.push(v);
+          }
+
+          return {
+            horizontal: horizontal,
+            veritical: veritical
+          };
+        }
+
+        // Determines which part of the graphics are used
+        // for snapping.
+        getObjectSnappingEdges(node) {
+          let box = node.getClientRect();
+          let absPos = node.absolutePosition();
+
+          // Left and top for now.
+          return {
+            horizontal: [{
+              guide: Math.round(box.y),
+              offset: Math.round(absPos.y - box.y),
+              snap: 'start'
+            }],
+            veritical: [{
+              guide: Math.round(box.x),
+              offset: Math.round(absPos.x - box.x),
+              snap: 'start'
+            }]
+          };
+        }
+
+        getGuides(lineGuideStops, itemBounds) {
+          let resultH = [];
+          let resultV = [];
+
+          lineGuideStops.horizontal.forEach((lineGuide) => {
+            itemBounds.horizontal.forEach((itemBound) => {
+              let diff = Math.abs(lineGuide - itemBound.guide);
+              if (diff < this.GUIDELINE_OFFSET) {
+                resultH.push({
+                  lineGuide: lineGuide,
+                  diff: diff,
+                  snap: itemBound.snap,
+                  offset: itemBound.offset
+                });
+              }
+            });
+          });
+
+          lineGuideStops.veritical.forEach((lineGuide) => {
+            itemBounds.veritical.forEach((itemBound) => {
+              let diff = Math.abs(lineGuide - itemBound.guide);
+              if (diff < this.GUIDELINE_OFFSET) {
+                resultV.push({
+                  lineGuide: lineGuide,
+                  diff: diff,
+                  snap: itemBound.snap,
+                  offset: itemBound.offset
+                });
+              }
+            });
+          });
+
+          let guides = [];
+
+          // Find closest snap.
+          let minH = resultH.sort((a, b) => a.diff - b.diff)[0];
+          let minV = resultV.sort((a, b) => a.diff - b.diff)[0];
+
+          if (minH) {
+            guides.push({
+              lineGuide: minH.lineGuide,
+              offset: minH.offset,
+              orientation: 'H',
+              snap: minH.snap
+            });
+          }
+          
+          if (minV) {
+            guides.push({
+              lineGuide: minV.lineGuide,
+              offset: minV.offset,
+              orientation: 'V',
+              snap: minV.snap
+            });
+          }
+
+          return guides;
+        }
+
+        drawGuides(guides) {
+          guides.forEach((lg) => {
+            if (lg.orientation === 'H') {
+              let line = new Konva.Line({
+                points: [-6000, 0, 6000, 0],
+                stroke: 'rbg(0, 161, 255)',
+                strokeWidth: 1,
+                name: 'guide-line',
+                dash: [4, 6]
+              });
+              this.layer.add(line);
+              line.absolutePosition({
+                x: 0,
+                y: lg.lineGuide
+              });
+            } else if (lg.orientation === 'V') {
+              let line = new Konva.Line({
+                points: [0, -6000, 0, 6000],
+                stroke: 'rbg(0, 161, 255)',
+                strokeWidth: 1,
+                name: 'guide-line',
+                dash: [4, 6]
+              });
+              this.layer.add(line);
+              line.absolutePosition({
+                x: lg.lineGuide,
+                y: 0
+              });
+            }
+          });
+        }
+
+        addPcs(pcs) {
+          pcs.forEach(pc => this.addPc(pc));
+        }
+
+        addPc(pc) {
+          let group = new Konva.Group({
+          	x: pc.pos.x,
+	          y: pc.pos.y,
+	          draggable: true
+          });
+          group.add(new Konva.Circle({
+            radius: this.GRID_SIZE / 2,
+            fill: pc.color
+          }));
+
+          this.initGroup(group, pc);
+        }
+
+        addNpcs(npcs) {
+          npcs.forEach(npc => this.addNpc(npc));
+        }
+
+        addNpc(npc) {
+        	npc.clones.forEach((clone, i) => {
+          	let group = new Konva.Group({
+          		x: clone.pos.x,
+	            y: clone.pos.y,
+	            draggable: true
+          	});
+          	group.add(new Konva.Rect({
+          		width: this.GRID_SIZE,
+          		height: this.GRID_SIZE,
+	            fill: npc.color
+          	}));
+
+          	this.initGroup(group, npc, i);
+        	});
+        }
+
+        initGroup(group, char, index) {
+        	// Add some text to indicate if dead.
+        	// When the shape is a circle we can use a 
+        	// negative padding to get the text to line 
+        	// up correctly. Lazy but close enough.
+        	let padding = (index == null) ? -8 : 5;
+        	let text = new Konva.Text({
+        		text: 'X',
+            fontSize: 20,
+            padding: padding,
+            fill: '#fff',
+            visible: false
+        	});
+        	group.add(text);
+
+        	group.setAttr('isNpc', char instanceof NPC);
+          group.setAttr('character', char);
+          let clone = null;
+          let isDead = char.isDead();
+          if (index != null) {
+          	clone = char.clones[index];
+          	group.setAttr('clone', clone);
+          	group.setAttr('cloneIndex', index);
+          	isDead = clone.isDead();
+          }
+          if (isDead) text.show();
+
+          let self = this;
+          group.on('mouseover', function () {
+            document.body.style.cursor = 'grab';
+          });
+          group.on('mouseout', function () {
+            document.body.style.cursor = 'default';
+          });
+          group.on('mousemove', function() {
+            let mousePos = self.stage.getPointerPosition();
+            self.tooltip.position({
+              x: mousePos.x + 5,
+              y: mousePos.y + 5
+            });
+            if (clone) {
+            	self.tooltip.text(`${char.name} ${index}: HP ${clone.hp} / ${clone.maxHp}, AC ${clone.ac}`);
+            } else {
+            	self.tooltip.text(`${char.name}: HP ${char.hp} / ${char.maxHp}, AC: ${char.ac}`);
+            }
+            self.tooltip.show();
+          });
+          group.on('mouseout', function() {
+            self.tooltip.hide();
+          });
+
+          this.layer.add(group);
+        }
+
+        removeShapes(id) {
+        	let groups = this.layer.getChildren(child => {
+        		return child.getAttr('character').id === id;
+        	});
+        	groups.forEach(group => group.destroy());
+        }
+      }
+
+      let stateHandler = new StateHandler();
+      let battlefield = null;
+      let battlefields = [];
+
+  		let battfieldTitleTemplate = null;
+  		let battlefieldRowTemplate = null;
+  		let pcTitleTemplate = null;
+  		let pcRowTemplate = null;
+  		let npcTitleTemplate = null;
+  		let npcRowTemplate = null;
+  		let sortedTitleTemplate = null;
+  		let sortedRowTemplate = null;
+  		let npcCloneTitleTemplate = null;
+  		let npcCloneRowTemplate = null;
+
+  		function onBattlefieldUpdated(e) {
+  			saveState();
+  			updateBattleContent();
+  		}
+
+  		function loadState() {
+  			$('#battlefieldList')
+  				.empty()
+  				.append(battfieldTitleTemplate({}));
+
+  			$('#pcList')
+  				.empty()
+  				.append(pcTitleTemplate({}));
+
+  			$('#npcList')
+  				.empty()
+  				.append(npcTitleTemplate({}));
+
+  			if (battlefield) {
+  				battlefield.removeEventListener('updated', onBattlefieldUpdated);
+  				battlefield.mapDeactivate();
+  			}
+
+  			let state = stateHandler.load();
+  			battlefields = state.battlefields;
+  			battlefield = state.battlefield;
+  			battlefield.addEventListener('updated', onBattlefieldUpdated);
+
+  			// Sort the battlefields by name.
+  			battlefields.sort((a, b) => {
+  				if (a.name > b.name) return 1;
+  				if (a.name < b.name) return -1;
+  				return 0;
+  			});
+
+  			showBattlefieldName();
+
+  			battlefields.forEach(b => addBattlefieldRow(b));
+
+  			if (battlefield) {
+  				battlefield.pcs.forEach(pc => addRow('#pcList', pcRowTemplate, pc));
+  				battlefield.npcs.forEach(npc => addRow('#npcList', npcRowTemplate, npc));
+				} else {
+					selectBattlefieldsTab();
+				}
+
+				updateBattleContent();
+  		}
+
+  		function showBattlefieldName() {
+  			if (battlefield) {
+  				$('#selectedBattlefieldName').html(battlefield.name);
+  				return;
+  			}
+
+  			// If we got here there are no sets to show.
+  			battlefield = null;
+  			$('#selectedBattlefieldName').empty();
+  		}
+
+  		function loadBattlefieldsList() {
+  			battlefields.forEach(b => addBattlefieldRow(b));
+  		}
+
+  		function saveState() {
+  			stateHandler.save(battlefields, battlefield);
+  		}
+
+  		function saveAndLoadState() {
+  			saveState();
+  			loadState();
+  		}
+
+  		function showBattlefield() {
+  			$('#pcList').empty();
+  			$('#npcList').empty();
+
+  			battlefield.pcs.forEach(pc => addRow('#pcList', pcRowTemplate, pc));
+  			battlefield.npcs.forEach(npc => addRow('#npcList', npcRowTemplate, npc));
+
+  			updateBattleContent();
+  		}
+
+  		function addBattlefieldRow(s) {
+  			let row = battlefieldRowTemplate(s);
+  			$('#battlefieldList').append(row);
+  		}
+
+  		function addRow(selector, template, r) {
+  			let row = template(r);
+  			$(selector).append(row);
+  		}
+
+  		function updateBattleContent() {
+  			let list = $('#sortedList').empty();
+
+  			if (battlefield) {
+  				$('#sortedList').append(sortedTitleTemplate({}));
+
+  				let sorted = battlefield.getAllByInitiative();
+  				sorted.forEach(s => addRow('#sortedList', sortedRowTemplate, s));
+  			}
+
+				showNpcClones();
+  		}
+
+  		function showNpcClones() {
+  			let list = $('#npcCloneList');
+  			list.empty();
+
+  			if (!battlefield || !battlefield.npcs) return;
+
+  			let sorted = battlefield.getNpcsByInitiative();
+
+	  		list.append(npcCloneTitleTemplate({}));
+
+	  		sorted.forEach(npc => {
+	  			npc.updateAllClones();
+
+	  			npc.clones.forEach((clone, i) => {
+	  				let row = npcCloneRowTemplate({
+	  					id: npc.id,
+	  					name: npc.name,
+	  					ac: npc.ac,
+	  					maxHp: npc.maxHp,
+	  					hp: clone.hp,
+	  					index: i
+	  				});
+	  				list.append(row);
+	  			});
+	  		});
+  		}
+
+  		function addBattlefield(e) {
+  			e.preventDefault();
+
+  			let name = $('#newBattlefieldName').val();
+  			
+  			$('#newBattlefieldModal').modal('hide');
+
+  			if (!name) return;
+
+  			battlefield = new Battlefield({
+  				name: name
+  			});
+
+  			battlefields.push(battlefield);
+  			saveAndLoadState();
+  		}
+
+  		function addPc(e) {
+  			e.preventDefault();
+
+  			if (!battlefield) {
+  				alert('Create a battlefield first');
+  				return;
+  			}
+
+  			let name = $('#newPcName').val();
+  			let maxHp = parseInt($('#newPcMaxHp').val()) || 8;
+  			let ac = parseInt($('#newPcAc').val()) || 10;
+  			let initBonus = parseInt($('#newPcInitBonus').val()) || 0;
+  			
+  			$('#newPcModal').modal('hide');
+
+  			if (!name) return;
+
+  			let pc = new PC({
+  				name: name,
+  				maxHp: maxHp,
+  				hp: maxHp,
+  				ac: ac,
+  				initBonus: initBonus
+  			});
+  			battlefield.addPc(pc);
+
+  			saveState();
+  			loadState();
+  		}
+
+  		function addNpc(e) {
+  			e.preventDefault();
+
+  			if (!battlefield) {
+  				alert('Create a battlefield first');
+  				return;
+  			}
+
+  			let name = $('#newNpcName').val();
+  			let count = parseInt($('#newNpcCount').val()) || 1;
+  			let maxHp = parseInt($('#newNpcMaxHp').val()) || 10;
+  			let initBonus = parseInt($('#newNpcInitBonus').val()) || 0;
+  			let ac = parseInt($('#newNpcAc').val()) || 10;
+  			
+  			$('#newNpcModal').modal('hide');
+
+  			if (!name) return;
+
+  			let npc = new NPC({
+  				name: name,
+  				count: count,
+  				maxHp: maxHp,
+  				hp: maxHp,
+  				ac: ac,
+  				initBonus: initBonus
+  			});
+  			battlefield.addNpc(npc);
+
+  			saveState();
+  			loadState();
+  		}
+
+  		function mapSetShapeColor(e) {
+  			e.preventDefault();
+
+  			battlefield.mapSetShapeColor();
+  		}
+
+  		function mapTakeDamage(e) {
+  			e.preventDefault();
+
+  			battlefield.mapTakeDamage();
+  		}
+
+  		function updateBattlefieldInfo(e) {
+  			e.preventDefault();
+
+  			let rowData = getRowData(e);
+  			let name = rowData.row.find('.battlefieldName').val();
+
+  			let obj = getRowObjectById(battlefields, rowData);
+  			if (!obj) return;
+  			
+  			let bf = obj.obj;
+				bf.name = name;
+				saveState();
+				loadState();
+  		}
+
+  		function getRowData(e) {
+  			let row = $(e.target.closest('div.row'));
+  			return {
+  				row: row,
+  				id: parseInt(row.attr('data-id'))
+  			};
+  		}
+
+  		function selectBattlefield(e) {
+  			e.preventDefault();
+
+  			if (battlefield) battlefield.mapDeactivate();
+
+  			let rowData = getRowData(e);
+  			battlefield = battlefields.filter(b => {
+  				return b.id === rowData.id;
+  			})[0];
+  			saveState();
+  			loadState();
+
+  			selectPcsTab();
+  		}
+
+  		function selectBattlefieldsTab() {
+  			selectTab('#battlefieldsTab');
+  		}
+
+  		function selectPcsTab() {
+  			selectTab('#pcsTab');
+  		}
+
+  		function selectTab(selector) {
+  			let tabEl = document.querySelector(selector);
+				let tab = new bootstrap.Tab(tabEl);
+				tab.show();
+  		}
+
+  		function removeBattlefield(e) {
+  			e.preventDefault();
+
+  			if (!confirm('Are you sure you want to remove this battlefield and all of its data?')) return;
+
+  			let rowData = getRowData(e);
+  			let obj = getRowObjectById(battlefields, rowData);
+  			if (!obj) return;
+  			
+				battlefields.splice(obj.index, 1);
+				saveState();
+				loadState();
+  		}
+
+  		function removePc(e) {
+  			if (!confirm('Are you sure you want to delete this PC?')) return;
+
+  			// Bind or else the function we are passing
+  			// loses track of 'this'.
+  			removePcFromBattlefield(e, battlefield.removePc.bind(battlefield));
+  		}
+
+  		function removeNpc(e) {
+  			// Bind or else the function we are passing
+  			// loses track of 'this'.
+  			removePcFromBattlefield(e, battlefield.removeNpc.bind(battlefield));
+  		}
+
+  		function removePcFromBattlefield(e, f) {
+  			e.preventDefault();
+
+  			let rowData = getRowData(e);
+  			f(rowData.id);
+				saveState();
+				updateBattleContent();
+				rowData.row.remove();
+  		}
+
+  		function updatePcInfo(e) {
+  			e.preventDefault();
+
+  			let rowData = getRowData(e);
+  			let pc = battlefield.getPc(rowData.id);
+				pc.name = rowData.row.find('.pcName').val();
+				pc.maxHp = parseInt(rowData.row.find('.maxHp').val()) || 8;
+				pc.hp = parseInt(rowData.row.find('.hp').val()) || 8;
+				pc.ac = parseInt(rowData.row.find('.ac').val()) || 10;
+				pc.init = parseInt(rowData.row.find('.init').val()) || 0;
+				pc.initBonus = parseInt(rowData.row.find('.initBonus').val()) || 0;
+				saveState();
+				updateBattleContent();
+  		}
+
+  		function updateNpcInfo(e) {
+  			e.preventDefault();
+
+  			let rowData = getRowData(e);
+  			let npc = battlefield.getNpc(rowData.id);
+				npc.name = rowData.row.find('.pcName').val();
+				npc.count = parseInt(rowData.row.find('.npcCount').val()) || 1;
+				npc.maxHp = parseInt(rowData.row.find('.maxHp').val()) || 10;
+				npc.hp = parseInt(rowData.row.find('.maxHp').val()) || 10;
+				npc.ac = parseInt(rowData.row.find('.ac').val()) || 10;
+				npc.init = parseInt(rowData.row.find('.init').val()) || 0;
+				npc.initBonus = parseInt(rowData.row.find('.initBonus').val()) || 0;
+				saveState();
+				updateBattleContent();
+  		}
+
+  		function removeAllNpcs(e) {
+  			e.preventDefault();
+
+  			if (!battlefield) {
+  				alert('Create a battlefield first');
+  				return;
+  			}
+
+  			if (!confirm('Are you sure you want to clear ALL of the NPCs from the battlefield?')) return;
+
+  			battlefield.removeAllNpcs();
+  			saveState();
+  			loadState();
+  		}
+
+  		function rollArrayInitiatives(e, arr, listSelector) {
+  			e.preventDefault();
+
+  			if (!battlefield) {
+  				alert('Create a battlefield first');
+  				return;
+  			}
+
+				for (let i = 0; i < arr.length; i++) {
+  				rollInitiative(arr[i], listSelector);
+  			}
+
+  			saveState();
+  			updateBattleContent();
+  		}
+
+  		function rollPcInitiatives(e) {
+  			e.preventDefault();
+
+  			battlefield.rollInitiativeForPcs();
+  			saveAndLoadState();
+  		}
+
+  		function rollInitiativeForPc(e) {
+  			rollInitiativeForSingle(e, battlefield.getPc.bind(battlefield));
+  		}
+
+  		function rollInitiativeForNpc(e) {
+  			rollInitiativeForSingle(e, battlefield.getNpc.bind(battlefield));
+  		}
+
+  		function rollInitiativeForSingle(e, f) {
+  			e.preventDefault();
+
+  			let rowData = getRowData(e);
+
+  			let pc = f(rowData.id);
+  			pc.rollInitiative();
+  			saveAndLoadState();
+  		}
+
+  		function resetPcsHp(e) {
+  			e.preventDefault();
+
+  			battlefield.resetPcsHp();
+  			saveAndLoadState();
+  		}
+
+  		function rollNpcInitiatives(e, reload) {
+  			e.preventDefault();
+
+  			battlefield.rollInitiativeForNpcs();
+  			saveAndLoadState();
+  		}
+
+  		function rollAllInitiatives(e) {
+  			e.preventDefault();
+
+  			battlefield.rollInitiativeForPcs();
+  			battlefield.rollInitiativeForNpcs();
+  			saveAndLoadState();
+  		}
+
+  		function updatePcDamage(e) {
+  			e.preventDefault();
+
+  			let rowData = getRowData(e);
+
+  			let damage = parseInt(rowData.row.find('.hpDamage').val()) || 0;
+
+  			let pc = battlefield.getPc(rowData.id);
+  			pc.takeDamage(damage);
+  			saveAndLoadState();
+  		}
+
+  		function updateNpcClones(e) {
+  			e.preventDefault();
+
+  			let rowData = getRowData(e);
+  			rowData.index = parseInt(rowData.row.attr('data-index'));
+
+  			let damage = parseInt(rowData.row.find('.hpDamage').val()) || 0;
+
+  			let npc = battlefield.getNpc(rowData.id);
+  			npc.cloneTakeDamage(rowData.index, damage);
+  			saveAndLoadState();
+  		}
+
+  		function getRowObjectById(arr, rowData) {
+  			for (let i = 0; i < arr.length; i++) {
+  				if (arr[i].id === rowData.id) {
+  					return {
+  						obj: arr[i],
+  						index: i
+  					};
+  				}
+  			}
+
+  			return null;
+  		}
+
+  		function getTemplate(selector) {
+  			let template = $(selector).html();
+  			return Handlebars.compile(template);
+  		}
+
+  		function mapBeginTakeDamage(e) {
+  			e.preventDefault();
+
+  			battlefield.mapBeginTakeDamage();
+  		}
+
+  		function mapBeginSetShapeColor(e) {
+  			e.preventDefault();
+
+  			battlefield.mapBeginSetShapeColor();
+  		}
+
+  		function mapHideMenu() {
+  			battlefield.mapHideMenu();
+  		}
+
+  		$(document).ready(function() {
+  			battfieldTitleTemplate = getTemplate('#battfieldTitleTemplate');
+  			battlefieldRowTemplate = getTemplate('#battlefieldRowTemplate');
+  			pcTitleTemplate = getTemplate('#pcTitleTemplate');
+  			pcRowTemplate = getTemplate('#pcRowTemplate');
+  			npcTitleTemplate = getTemplate('#npcTitleTemplate');
+  			npcRowTemplate = getTemplate('#npcRowTemplate');
+  			sortedTitleTemplate = getTemplate('#sortedTitleTemplate');
+  			sortedRowTemplate = getTemplate('#sortedRowTemplate');
+  			npcCloneTitleTemplate = getTemplate('#npcCloneTitleTemplate');
+  			npcCloneRowTemplate = getTemplate('#npcCloneRowTemplate');
+
+  			loadState();
+
+  			$('#newBattlefieldModal')
+  				.on('show.bs.modal', function(e) {
+  					$('#newBattlefieldName').val('');
+  				})
+  				.on('shown.bs.modal', function(e) {
+  					$('#newBattlefieldName').focus();
+  				});
+
+  			$('#newPcModal')
+  				.on('show.bs.modal', function(e) {
+  					$('#newPcName').val('');
+  					$('#newPcMaxHp').val('');
+  					$('#newPcAc').val('');
+  					$('#newPcInitBonus').val('0');
+  				})
+  				.on('shown.bs.modal', function(e) {
+  					$('#newPcName').focus();
+  				});
+
+  			$('#newNpcModal')
+  				.on('show.bs.modal', function(e) {
+  					$('#newNpcName').val('');
+  					$('#newNpcCount').val('1');
+  					$('#newNpcMaxHp').val('');
+  					$('#newNpcAc').val('');
+  					$('#newNpcInitBonus').val('0');
+  				})
+  				.on('shown.bs.modal', function(e) {
+  					$('#newNpcName').focus();
+  				});
+
+  			$('#shapeDamageModal')
+  				.on('show.bs.modal', function(e) {
+  					$('#shapeDamage').val('');
+  				})
+  				.on('shown.bs.modal', function(e) {
+  					$('#shapeDamage').focus();
+  				});
+
+  			$('#newBattlefieldModalAddButton').click(addBattlefield);
+  			$('#newPcModalAddButton').click(addPc);
+  			$('#newNpcModalAddButton').click(addNpc);
+  			$('#shapeColorModalSetButton').click(mapSetShapeColor);
+  			$('#shapeDamageModalSetButton').click(mapTakeDamage);
+
+  			$('#rollPcInitiatives').click(rollPcInitiatives);
+  			$('#resetPcsHp').click(resetPcsHp);
+  			$('#rollNpcInitiatives').click(rollNpcInitiatives);
+  			$('#rollNpcsLink').click(rollNpcInitiatives);
+  			$('#rollAllLink').click(rollAllInitiatives);
+
+  			$('#battlefieldList').on('change', 'input', updateBattlefieldInfo);
+  			$('#battlefieldList').on('click', '.selectBattlefieldLink', selectBattlefield);
+  			$('#battlefieldList').on('click', '.removeLink', removeBattlefield);
+
+  			$('#pcList').on('change', 'input', updatePcInfo);
+  			$('#pcList').on('click', '.rollInitiativeLink', rollInitiativeForPc);
+  			$('#pcList').on('click', '.removeLink', removePc);
+
+  			$('#npcList').on('change', 'input', updateNpcInfo);
+  			$('#npcList').on('click', '.rollInitiativeLink', rollInitiativeForNpc);
+  			$('#npcList').on('click', '.removeLink', removeNpc);
+
+  			$('#removeNpcsLink').click(removeAllNpcs);
+
+  			$('#sortedList').on('change', 'input', updatePcDamage);
+  			$('#npcCloneList').on('change', 'input', updateNpcClones);
+
+  			$('#mapDamageButton').click(mapBeginTakeDamage);
+  			$('#mapColorButton').click(mapBeginSetShapeColor);
+  			$(window).click(mapHideMenu);
+  		});
+  	</script>
+	</body>
+</html>
