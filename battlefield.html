@@ -139,6 +139,7 @@
 					<nav>
 						<div class="nav nav-tabs" id="tabList" role="tablist">
 							<button class="nav-link" id="battlefieldsTab" data-bs-toggle="tab" data-bs-target="#battlefieldsContent" role="tab">Battlefields</button>
+							<button class="nav-link" id="testTab" data-bs-toggle="tab" data-bs-target="#testContent" role="tab">Test</button>
 							<button class="nav-link active" id="pcsTab" data-bs-toggle="tab" data-bs-target="#pcsContent" role="tab">PCs</button>
 							<button class="nav-link" id="npcsTab" data-bs-toggle="tab" data-bs-target="#npcsContent" role="tab">NPCs</button>
 							<button class="nav-link" id="sortedTab" data-bs-toggle="tab" data-bs-target="#battleContent" role="tab">Battle</button>
@@ -155,6 +156,10 @@
 
 							<div id="battlefieldList">
 							</div>
+						</div>
+
+						<div id="testContent" class="tab-pane fade" role="tabpanel">
+							<div id="testContainer"></div>
 						</div>
 
 						<div id="pcsContent" class="tab-pane fade show active" role="tabpanel">
@@ -588,6 +593,7 @@
   			<div class="col-sm-1">
   				<b>Damage</b>
 				</div>
+			</div>
   	</script>
 
   	<script id="sortedRowTemplate" type="text/x-handlebars-template">
@@ -610,6 +616,7 @@
   			<div class="col-sm-1">
   				<input type="text" class="form-control hpDamage" placeholder="Damage" />
 				</div>
+			</div>
   	</script>
 
   	<script id="npcCloneTitleTemplate" type="text/x-handlebars-template">
@@ -629,6 +636,7 @@
   			<div class="col-sm-1">
   				<b>Damage</b>
 				</div>
+			</div>
   	</script>
 
   	<script id="npcCloneRowTemplate" type="text/x-handlebars-template">
@@ -648,6 +656,26 @@
   			<div class="col-sm-1">
   				<input type="text" class="form-control hpDamage" placeholder="Damage" />
 				</div>
+			</div>
+  	</script>
+
+  	<script id="testTemplate" type="text/x-handlebars-template">
+  		Hello
+  		<div id="testList"></div>
+  	</script>
+
+  	<script id="testArrayTemplate" type="text/x-handlebars-template">
+  		<div class="row" data-id="{{id}}">
+	  		<div class="col">
+	  			{{id}}
+	  		</div>
+	  		<div class="col">
+	  			{{name}}
+	  		</div>
+	  		<div class="col">
+	  			<button class="testButton">Hey</button>
+	  		</div>
+  		</div>
   	</script>
 
   	<script>
@@ -658,6 +686,99 @@
 	    function removeAllChildNodes(parent) {
 	    	while (parent.firstChild) {
 	    		parent.removeChild(parent.firstChild);
+	    	}
+	    }
+
+	    class View {
+	    	/**
+	    	 * Options looks like this:
+	    	 * {
+	    	 * 	container: '#myContainer',
+	    	 * 	template: '#myTemplate',
+	    	 * 	data: { foo: 'bar' }
+	    	 *  events: [
+	    	 * 		{
+	    	 * 			selector: '#myButton',
+	    	 *      event: 'click',
+	    	 *      method: 'onMyButtonClick' 
+	    	 * 		}
+	    	 *  ]
+	    	 * }
+	    	 */
+	    	constructor(options) {
+	    		this.container = document.querySelector(options.container);
+
+	    		let template = document.querySelector(options.template).innerHTML;
+	    		this.template = Handlebars.compile(template);
+
+	    		this.data = options.data;
+	    		this.events = options.events;
+	    	}
+
+	    	removeAll() {
+	    		while (this.container.firstChild) {
+	    			this.container.removeChild(this.container.firstChild);
+	    		}
+	    	}
+
+	    	render() {
+	    		this.removeAll();
+	    		this.renderWithData();
+	    		this.bindEvents();
+	    		return this;
+	    	}
+
+	    	renderWithData() {
+	    		this.container.insertAdjacentHTML('beforeend', this.template(this.data));
+	    	}
+
+	    	bindEvents() {
+	    		if (!this.events || !this.events.length) return;
+
+	    		this.events.forEach(e => {
+	    			console.log(e);
+	    			let method = this[e.method];
+	    			if (method) {
+		    			let els = this.container.querySelectorAll(e.selector);
+		    			if (els && els.length) {
+		    				els.forEach(el => {
+		    					el.addEventListener(e.event, method);
+		    				});
+		    			} else {
+		    				console.log(`Element(s) not found: ${e.selector}`);
+		    			}
+	    			} else {
+	    				console.log(`Method not found: ${e.method}`);
+	    			}
+	    		});
+	    	}
+	    }
+
+	    class ArrayView extends View {
+	    	constructor(options) {
+	    		super(options);
+	    	}
+
+	    	renderWithData() {
+	    		if (this.data && this.data.length) {
+	    			this.data.forEach(d => {
+	    				this.container.insertAdjacentHTML('beforeend', this.template(d));
+	    			});
+	    		}
+	    	}
+	    }
+
+	    class TestArrayView extends ArrayView {
+	    	constructor(options) {
+	    		super(options);
+	    	}
+
+	    	onTestButtonClick(e) {
+	    		e.preventDefault();
+
+	    		let row = e.target.closest('div.row');
+	    		let id = parseInt(row.dataset.id);
+	    		console.log('onTestButtonClick', id);
 	    	}
 	    }
 
@@ -1962,6 +2083,40 @@
   		function mapHideMenu() {
   			battlefield.mapHideMenu();
   		}
+
+  		let testView = new View({
+  			container: '#testContainer',
+  			template: '#testTemplate',
+  			data: {
+  				title: 'Hello',
+
+  			}
+  		});
+  		testView.render();
+
+  		let testArrayView = new TestArrayView({
+  			container: '#testList',
+  			template: '#testArrayTemplate',
+  			data: [
+  				{
+  					id: 1,
+  					name: 'Bob'
+  				},
+  				{
+  					id: 2,
+  					name: 'Jill'
+  				}
+  			],
+  			events: [
+  				{
+  					selector: '.testButton',
+  					event: 'click',
+  					method: 'onTestButtonClick'
+  				}
+  			]
+  		});
+  		testArrayView.render();
+
 
 			battfieldTitleTemplate = getTemplate('battfieldTitleTemplate');
 			battlefieldRowTemplate = getTemplate('battlefieldRowTemplate');
