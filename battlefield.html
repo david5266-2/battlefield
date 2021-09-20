@@ -614,7 +614,9 @@
   				{{hp}}
 				</div>
   			<div class="col-sm-1">
-  				<input type="text" class="form-control hpDamage" placeholder="Damage" />
+          {{#if isPc}}
+  				  <input type="text" class="form-control hpDamage" placeholder="Damage" />
+          {{/if}}
 				</div>
 			</div>
   	</script>
@@ -843,6 +845,7 @@
       		if (options.pos.x !== 0) options.pos.x = options.pos.x || 50;
       		if (options.pos.y !== 0) options.pos.y = options.pos.y || 50;
           Object.assign(this, options);
+          this.isPc = true;
         }
 
         rollInitiative() {
@@ -886,6 +889,7 @@
             }
           }
           Object.assign(this, options);
+          this.isPc = false;
           this.updateAllClones();
         }
 
